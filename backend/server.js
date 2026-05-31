@@ -20,10 +20,10 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json()); 
+app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Berhasil terhubung ke database MongoDB (indekos_system)'))
+  .then(() => console.log('Berhasil terhubung ke database '))
   .catch((err) => console.error('Gagal terhubung ke MongoDB:', err));
 
 // Rute Aplikasi
@@ -41,5 +41,5 @@ app.get('/', (req, res) => {
 // Jalankan Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
+  console.log(`Server berjalan di http://localhost:${PORT}`);
 });

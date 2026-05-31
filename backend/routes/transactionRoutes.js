@@ -42,16 +42,14 @@ router.post('/add',  async (req, res) => {
   }
 });
 
-// ========================================================
 // 2. GET: Mengambil Semua Riwayat Transaksi (ADMIN, STAFF, OWNER)
-// ========================================================
-// Ditambahkan protect dan authorizeRoles agar Owner, Staff, dan Admin bisa melihat buku jurnal keuangan kos
+
 router.get('/', async (req, res) => {
   try {
     // Menggunakan populate ganda untuk menarik data penyewa dan kamar sekaligus
     const transactions = await Transaction.find()
-      .populate('tenantId', 'name phone') // Hanya ambil nama dan nomor hp penyewa
-      .populate('roomId', 'roomNumber type'); // Hanya ambil nomor dan tipe kamar
+      .populate('tenant', 'name phone') 
+      .populate('room', 'roomNumber type'); 
       
     res.status(200).json(transactions);
   } catch (error) {

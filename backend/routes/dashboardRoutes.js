@@ -84,4 +84,45 @@ router.get("/recent-activity" , async (req,res) => {
 })
 
 
+router.get("/stats", async (req, res) => {
+    try {
+        // 1. Revenue Trend (Last 6 Months)
+        const revenueTrend = await Transaction.aggregate([
+            {
+                $match: {
+                    status: "Success",
+                    createdAt: { $gte: new Date(new Date().setMonth(new Date().getMonth() - 6)) }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        month: { $month: "$createdAt" },
+                        year: { $year: "$createdAt" }
+                    },
+                    total: { $sum: "$amount" }
+                }
+            },
+            { $sort: { "_id.year": 1, "_id.month": 1 } }
+        ]);
+
+        // 2. Occupancy by Room Type
+        const roomDistribution = await Room.aggregate([
+            {
+                $group: {
+                    _id: "$type",
+                    total: { $sum: 1 },
+                    occupied: {
+                        $sum: { $cond: [{ $eq: ["$status", "occupied"] }, 1, 0] }
+                    }
+                }
+            }
+        ]);
+
+        res.status(200).json({ revenueTrend, roomDistribution });
+    } catch (error) {
+        res.status(500).json({ message: 'Terjadi kesalahan server', error: error.message });
+    }
+})
+
 module.exports = router

@@ -38,4 +38,15 @@ const roomSchema = new mongoose.Schema({
   timestamps: true 
 });
 
+roomSchema.virtual('tenant', {
+  ref: 'Tenant',
+  localField: '_id',
+  foreignField: 'room',
+  justOne: true,
+  match: { status: 'active' }
+})
+
+roomSchema.set('toObject'  , { virtuals: true });
+roomSchema.set('toJSON'    , { virtuals: true });
+
 module.exports = mongoose.model('Room', roomSchema);
