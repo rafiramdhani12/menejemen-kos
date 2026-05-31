@@ -8,12 +8,9 @@ const mongoose = require('mongoose');
 // IMPORT MITRA KEAMANAN: Hubungkan middleware pengecekan token dan role
 const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 
-// ========================================================
 // 1. POST: Mendaftarkan Penyewa Baru / Check-In (ADMIN & STAFF)
-// ========================================================
-// Ditambahkan protect dan authorizeRoles('admin', 'staff') -> Owner akan ditolak
+
 router.post('/add', async (req, res) => {
-  // ❌ KITA HAPUS SEMENTARA START SESSION-NYA UNTUK MONGODB LOKAL
   try {
     const { 
       name, 
@@ -21,18 +18,34 @@ router.post('/add', async (req, res) => {
       phone, 
       emergencyContact, 
       room, 
-      startDate, 
+      startDate, // Data string dari FE (misal: "2026-05-30")
       amountPaid, 
       periodMonth, 
       paymentMethod 
     } = req.body;
 
-    // 1. Validasi input wajib
-    if (!name || !nik || !room) {
-      return res.status(400).json({ message: 'Nama, NIK, dan Pilihan Kamar wajib diisi!' });
+    // == VALIDASI INPUT WAJIB ==
+    if (!name || !nik || !room || !startDate) {
+      return res.status(400).json({ message: 'Nama, NIK, Kamar, dan Tanggal Mulai wajib diisi!' });
     }
 
-    // 2. Cek apakah kamar ada dan statusnya 'available'
+    // 💡 PERBAIKAN LOGIC HITUNG: Mengembalikan Object Date asli sesuai skema model baru lu
+    const hitungEndDate = (startDateString, periode) => {
+      const date = new Date(startDateString); // Bikin object date dari string input FE
+      
+      let monthsToAdd = 1;
+      if (periode && periode.includes('3')) monthsToAdd = 3;
+      else if (periode && periode.includes('6')) monthsToAdd = 6;
+      else if (periode && periode.includes('1 Tahun')) monthsToAdd = 12;
+
+      date.setMonth(date.getMonth() + monthsToAdd);
+      return date; // ✅ KEMBALIKAN OBJECT DATE (Jangan di-.toISOString()!)
+    };
+
+    const calculatedEndDate = hitungEndDate(startDate, periodMonth);
+
+
+    // == VALIDASI KE DATABASE ==
     const roomDoc = await Room.findById(room);
     if (!roomDoc) {
       return res.status(404).json({ message: 'Kamar tidak ditemukan!' });
@@ -40,32 +53,33 @@ router.post('/add', async (req, res) => {
     if (roomDoc.status === 'occupied') {
       return res.status(400).json({ message: 'Kamar sudah diisi oleh orang lain!' });
     }
-
-    // 3. Cek keunikan NIK penyewa
     const nikExists = await Tenant.findOne({ nik });
     if (nikExists) {
       return res.status(400).json({ message: 'Penyewa dengan NIK ini sudah terdaftar!' });
     }
 
-    // 4. Simpan objek Tenant Baru
+
+    // 💡 SINKRONISASI: Masukkan data yang tipenya udah pas dengan skema model
     const newTenant = new Tenant({
       name,
       nik,
       phone,
       emergencyContact,
       room,
-      startDate,
+      startDate: new Date(startDate), // Konversi string dari FE jadi Object Date
+      endDate: calculatedEndDate,     // Object Date hasil hitungan fungsi di atas
+      status: 'active'                // Default sesuai skema lu
     });
 
-    // Simpan biasa tanpa parameter { session }
     const savedTenant = await newTenant.save();
 
-    // 5. Update status kamar menjadi 'occupied'
+    // Update status kamar menjadi 'occupied'
     roomDoc.status = 'occupied';
     await roomDoc.save();
 
-    // 6. Integrasi Transaksi Otomatis
-  if (amountPaid !== undefined && amountPaid !== null && amountPaid !== '') {
+
+    // == INTEGRASI TRANSAKSI OTOMATIS ==
+    if (amountPaid !== undefined && amountPaid !== null && amountPaid !== '') {
       
       console.log("-> Mencoba membuat data transaksi baru...");
       
@@ -73,7 +87,7 @@ router.post('/add', async (req, res) => {
         tenant: savedTenant._id,       
         room: room,                    
         tenantName: savedTenant.name,  
-        amount: Number(amountPaid), // Memastikan tipenya wajib Number sesuai skema
+        amount: Number(amountPaid), 
         notes: `Pembayaran awal untuk periode: ${periodMonth || '1 Bulan'}`, 
         paymentMethod: paymentMethod === 'Transfer Bank' ? 'Transfer' : 'Cash', 
         status: 'Success'              
@@ -83,7 +97,6 @@ router.post('/add', async (req, res) => {
       console.log("🎉 DATA TRANSAKSI BERHASIL DISIMPAN:", savedTransaction);
 
     } else {
-      // 🚨 DEBUG 2: Jika transaksi tidak terbuat, log ini akan berbunyi di terminal BE lu
       console.warn("⚠️ TRANSAKSI DILEWATI karena amountPaid kosong atau tidak terbaca!");
     }
 
@@ -97,23 +110,19 @@ router.post('/add', async (req, res) => {
     res.status(500).json({ message: 'Terjadi kesalahan server', error: error.message });
   }
 });
-// ========================================================
+
 // 2. GET: Mengambil Semua Data Penyewa (ADMIN, STAFF, OWNER)
-// ========================================================
-// Ditambahkan protect dan authorizeRoles agar Owner bisa melihat seluruh daftar penghuni kos
 router.get('/',  async (req, res) => {
   try {
-    const tenants = await Tenant.find().populate('roomId');
+    const tenants = await Tenant.find().populate('room');
     res.status(200).json(tenants);
   } catch (error) {
     res.status(500).json({ message: 'Terjadi kesalahan server', error: error.message });
   }
 });
 
-// ========================================================
-// 3. PUT: Proses Penyewa Keluar / Check-Out (ADMIN & STAFF)
-// ========================================================
-// Ditambahkan protect dan authorizeRoles('admin', 'staff') -> Owner tidak bisa melakukan check-out data
+// 3. PUT: 
+
 router.put('/checkout/:id',  async (req, res) => {
   try {
     const tenantId = req.params.id;

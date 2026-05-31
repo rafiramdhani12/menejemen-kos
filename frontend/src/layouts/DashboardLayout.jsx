@@ -29,10 +29,16 @@ const DashboardLayout = () => {
       onError: (error) => {
         console.error("Logout gagal:", error.response?.data?.message || error.message);
       }
-    });
-
+    });    
   }
-
+  
+  const listLinks = [
+    {id:1 , icon : "📊" , title:"dashboard", link:"/dashboard"},
+    {id:2 , icon : "🛏️" , title:"manajemen kamar", link:"/dashboard/rooms"},
+    {id:3 , icon : "👥" , title:"data penghuni", link:"/dashboard/tenants"},
+    {id:4 , icon : "💸" , title:"transaksi", link:"/dashboard/transactions"},
+  ]
+  
   return (
     <>
     <div className="min-h-screen bg-base-200 flex antialiased text-neutral selection:bg-primary/10">
@@ -48,18 +54,13 @@ const DashboardLayout = () => {
           </Link>
 
           <nav className="flex flex-col gap-1">
-            <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-primary/10 text-primary font-medium text-sm text-left transition-all">
-              <span>📊</span> Dashboard
-            </button>
-            <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-neutral/70 hover:bg-base-200 hover:text-neutral font-medium text-sm text-left transition-all">
-              <span>🛏️</span> Manajemen Kamar
-            </button>
-            <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-neutral/70 hover:bg-base-200 hover:text-neutral font-medium text-sm text-left transition-all">
-              <span>👥</span> Data Penghuni
-            </button>
-            <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-neutral/70 hover:bg-base-200 hover:text-neutral font-medium text-sm text-left transition-all">
-              <span>💸</span> Transaksi Sewa
-            </button>
+            {listLinks?.map((link) => (
+              <>
+              <Link key={link.id} to={link.link} className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-neutral/70 hover:bg-base-200 hover:text-neutral font-medium text-sm text-left transition-all">
+                <span>{link.icon}</span> {link.title}
+              </Link>
+              </>
+            ))}
           </nav>
         </div>
 

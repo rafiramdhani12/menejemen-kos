@@ -315,7 +315,7 @@ const TenantRegistration = () => {
                 </label>
               </div>
 
-              <div className="form-control">
+              <div className="form-control hidden">
                 <label className="label py-1 px-1">
                   <span className="text-xs font-semibold text-emerald-800">Metode Pembayaran</span>
                 </label>

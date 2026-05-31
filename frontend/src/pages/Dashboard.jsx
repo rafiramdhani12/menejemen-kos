@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import QuickActionCards from '../components/QuickActionCards';
 import { useGetAllRooms, useGetOccupied , useGetAvailable , useGetOmzet, useGetRecentActivity} from '../hooks/useDashboard';
 import MetricsCards from '../components/MetricsCards';
+import {quickActions} from "../constants/Dashboard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -27,17 +28,6 @@ const Dashboard = () => {
 
   console.log(`data recent activity : ${recentActivity}`);
 
-  const recentTransactions = [
-    { id: 1, nama: "Budi Santoso", kamar: "A1", tanggal: "28 Mei 2026", status: "Lunas" },
-    { id: 2, nama: "Andi Wijaya", kamar: "B3", tanggal: "26 Mei 2026", status: "Nunggak" },
-    { id: 3, nama: "Siti Rahma", kamar: "A5", tanggal: "25 Mei 2026", status: "Lunas" },
-  ];
-
-  const quickActions = [
-    {id:1 , icon:"👤", title:"Check-In Tenant", description:"Daftarkan penghuni baru yang baru masuk kamar.", navigate:"tenant/registration" ,border:"border-primary/50" , buttonText: "Buka Formulir"},
-    {id:2 , icon:"💵", title:"input bayar sewa", description:"Catat uang sewa masuk bulanan dari penghuni aktif", navigate:"/transaction", border:"border-secondary/50" , buttonText: "Catat Transaksi"},
-    {id:3 , icon:"🔑", title:"Atur kondisi kamar", description:"ubah status ketersediaan perbaikan atau fasilitas", navigate:"room/add-room" , border:"border-accent/50" , buttonText : "Lihat Kamar"},
-  ]
 
   const overViewProps = [
     { id: 1, title: "Total Kamar", value: stats.totalKamar?.length || 0 , desc: "unit" },
@@ -121,7 +111,7 @@ const Dashboard = () => {
             <p className="text-xs text-neutral/50">Lakukan tindakan harian manajemen kos secara instan.</p>
           </div>
 
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4'>
             {quickActions.map((action) => (
               <>
                 <QuickActionCards icon={action.icon} title={action.title} description={action.description} border={action.border} navigate={action.navigate} buttonText={action.buttonText} />
