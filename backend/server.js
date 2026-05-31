@@ -20,12 +20,11 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json()); // Agar server bisa membaca data berformat JSON
+app.use(express.json()); 
 
-// Koneksi ke MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Berhasil terhubung ke database MongoDB (indekos_system)'))
-  .catch((err) => console.error('❌ Gagal terhubung ke MongoDB:', err));
+  .then(() => console.log('Berhasil terhubung ke database MongoDB (indekos_system)'))
+  .catch((err) => console.error('Gagal terhubung ke MongoDB:', err));
 
 // Rute Aplikasi
 app.use('/api/rooms', roomRoutes);
