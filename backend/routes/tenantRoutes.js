@@ -121,6 +121,52 @@ router.get('/',  async (req, res) => {
   }
 });
 
+// 2a. GET: Mengambil Detail Penyewa secara Mendalam (Aggregation Pipeline)
+router.get('/:id', async (req, res) => {
+  try {
+    const tenantId = req.params.id;
+
+    const tenantDetail = await Tenant.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(tenantId) } },
+      // Join dengan data Kamar
+      {
+        $lookup: {
+          from: 'rooms',
+          localField: 'room',
+          foreignField: '_id',
+          as: 'roomDetail'
+        }
+      },
+      { $unwind: { path: '$roomDetail', preserveNullAndEmptyArrays: true } },
+      // Join dengan data Transaksi
+      {
+        $lookup: {
+          from: 'transactions',
+          localField: '_id',
+          foreignField: 'tenant',
+          as: 'paymentHistory'
+        }
+      },
+      // Sort transaksi dari yang terbaru
+      {
+        $addFields: {
+          paymentHistory: {
+            $sortArray: { input: "$paymentHistory", sortBy: { createdAt: -1 } }
+          }
+        }
+      }
+    ]);
+
+    if (!tenantDetail || tenantDetail.length === 0) {
+      return res.status(404).json({ message: 'Penyewa tidak ditemukan!' });
+    }
+
+    res.status(200).json(tenantDetail[0]);
+  } catch (error) {
+    res.status(500).json({ message: 'Terjadi kesalahan server', error: error.message });
+  }
+});
+
 // 3. PUT: 
 
 router.put('/checkout/:id',  async (req, res) => {

@@ -141,8 +141,8 @@ const TenantList = () => {
                         ) : (
                           <span className="text-xs text-neutral/30 italic">-</span>
                         )}
-                        <button className="btn btn-ghost btn-xs text-emerald-600 hover:bg-emerald-50 normal-case font-bold px-3 py-1 rounded-md">
-                            edit
+                        <button onClick={() => navigate(`tenant/${tenant._id}`)} className="btn btn-ghost btn-xs text-emerald-600 hover:bg-emerald-50 normal-case font-bold px-3 py-1 rounded-md">
+                            detail
                         </button>
                       </td>
 

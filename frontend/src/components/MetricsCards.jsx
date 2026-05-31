@@ -1,16 +1,21 @@
 import React from 'react'
 
-const MetricsCards = ({title , stats , desc}) => {
+const MetricsCards = ({ title, stats, desc, index }) => {
+  const borders = [
+    'border-t-indigo-500',
+    'border-t-teal-500',
+    'border-t-rose-500',
+    'border-t-amber-500'
+  ]
+  
   return (
-    <>
-    <div className="bg-base-100 p-6 rounded-2xl border border-base-300 shadow-sm flex flex-col justify-between">
-            <span className="text-xs font-semibold text-neutral/50 tracking-wider uppercase">{title}</span>
-            <div className="flex items-baseline gap-2 mt-2">
-              <span className="text-3xl font-bold tracking-tight">{stats}</span>
-              <span className="text-xs text-neutral/40">{desc || ''}</span>
-            </div>
-          </div>
-    </>
+    <div className={`bg-white p-7 rounded-[2rem] border border-slate-100 border-t-4 ${borders[index % 4]} aurora-card flex flex-col justify-between hover:scale-[1.02]`}>
+      <span className="text-[10px] font-extrabold text-slate-400 tracking-[0.2em] uppercase mb-4">{title}</span>
+      <div className="flex items-baseline gap-2">
+        <span className="text-4xl font-black text-slate-800 tracking-tighter">{stats}</span>
+        {desc && <span className="text-xs font-semibold text-slate-400 lowercase">{desc}</span>}
+      </div>
+    </div>
   )
 }
 
