@@ -1,23 +1,22 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import QuickActionCards from '../components/QuickActionCards';
-import { useGetAllRooms, useGetOccupied , useGetAvailable , useGetOmzet, useGetRecentActivity} from '../hooks/useDashboard';
+import { useGetAllRooms, useGetOccupied, useGetAvailable, useGetOmzet, useGetRecentActivity } from '../hooks/useDashboard';
+import { useGetDashboardStats } from '../hooks/useDashboardStats';
 import MetricsCards from '../components/MetricsCards';
+import RevenueChart from '../components/RevenueChart';
+import { quickActions } from "../constants/Dashboard";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  const { data: availRooms } = useGetAvailable();
+  const { data: allRooms } = useGetAllRooms();
+  const { data: occupiedRooms } = useGetOccupied();
+  const { data: omzet } = useGetOmzet();
+  const { data: recentActivity } = useGetRecentActivity([]);
+  const { data: statsData, isPending: statsLoading } = useGetDashboardStats();
 
-  const {data: availRooms , isPending} = useGetAvailable();
-  const {data: allRooms} = useGetAllRooms();
-  const {data: occupiedRooms} = useGetOccupied();
-  const {data: omzet} = useGetOmzet()
-  const {data: recentActivity} = useGetRecentActivity([]);
+  const indonesianRupiah = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
 
-  console.log(availRooms, allRooms, occupiedRooms , omzet);
-
-  const indonesianRupiah = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value);
-
-  // MOCK DATA (Nanti diganti query asli)
   const stats = {
     totalKamar: allRooms,
     kamarKosong: availRooms,
@@ -25,87 +24,110 @@ const Dashboard = () => {
     pendapatanBulanIni: omzet
   };
 
-  console.log(`data recent activity : ${recentActivity}`);
-
-  const recentTransactions = [
-    { id: 1, nama: "Budi Santoso", kamar: "A1", tanggal: "28 Mei 2026", status: "Lunas" },
-    { id: 2, nama: "Andi Wijaya", kamar: "B3", tanggal: "26 Mei 2026", status: "Nunggak" },
-    { id: 3, nama: "Siti Rahma", kamar: "A5", tanggal: "25 Mei 2026", status: "Lunas" },
-  ];
-
-  const quickActions = [
-    {id:1 , icon:"👤", title:"Check-In Tenant", description:"Daftarkan penghuni baru yang baru masuk kamar.", navigate:"tenant/registration" ,border:"border-primary/50" , buttonText: "Buka Formulir"},
-    {id:2 , icon:"💵", title:"input bayar sewa", description:"Catat uang sewa masuk bulanan dari penghuni aktif", navigate:"/transaction", border:"border-secondary/50" , buttonText: "Catat Transaksi"},
-    {id:3 , icon:"🔑", title:"Atur kondisi kamar", description:"ubah status ketersediaan perbaikan atau fasilitas", navigate:"room/add-room" , border:"border-accent/50" , buttonText : "Lihat Kamar"},
-  ]
-
   const overViewProps = [
-    { id: 1, title: "Total Kamar", value: stats.totalKamar?.length || 0 , desc: "unit" },
-    { id: 2, title: "Kamar Kosong", value: stats.kamarKosong?.count || 0 , desc: "tersedia"},
-    { id: 3, title: "Kamar Terisi", value: stats.kamarTerisi?.count || 0 , desc: "tersedia"},
-    { id: 4, title: "omzet bulan ini", value: indonesianRupiah(stats.pendapatanBulanIni?.total) || 0 , desc: null },
+    { id: 1, title: "Total Unit", value: stats.totalKamar?.length || 0, desc: "kamar" },
+    { id: 2, title: "Tersedia", value: stats.kamarKosong?.count || 0, desc: "unit" },
+    { id: 3, title: "Terhuni", value: stats.kamarTerisi?.count || 0, desc: "unit" },
+    { id: 4, title: "Estimasi Omzet", value: indonesianRupiah(stats.pendapatanBulanIni?.total || 0), desc: null },
   ]
 
   return (
-
-     <>
+    <div className="space-y-10">
       {/* Header Konten */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Overview Properti</h1>
-            <p className="text-xs text-neutral/50">Pantau status bisnis hunian sewa Anda hari ini.</p>
-          </div>
-          <div className="text-sm font-medium bg-base-100 px-4 py-2 rounded-xl border border-base-300 shadow-sm">
-            📅 {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-2">Overview Properti</h1>
+          <p className="text-sm font-medium text-slate-400">Kelola operasional dan pantau performa hunian Anda secara real-time.</p>
+        </div>
+        <div className="hidden lg:flex flex-col items-end">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1 text-right w-full">Hari Ini</span>
+          <div className="text-sm font-bold bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm text-slate-700">
+            {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </div>
         </div>
+      </div>
 
-        {/* METRICS CARDS GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      {/* METRICS CARDS GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {overViewProps?.map((item, idx) => (
+          <MetricsCards
+            key={item.id}
+            index={idx}
+            title={item.title}
+            stats={item.value}
+            desc={item.desc}
+          />
+        ))}
+      </div>
 
-          {overViewProps?.map((item) => (
-            <MetricsCards
-              key={item.id}
-              title={item.title}
-              stats={item.value}
-              desc={item.desc}
-            />
-          ))}
-        </div>
-
-        {/* TABLE DATA: Transaksi Terbaru */}
-        <div className="bg-base-100 rounded-2xl border border-base-300 shadow-sm p-6 mb-8">
-          <div className="flex justify-between items-center mb-6">
+      {/* Chart Section */}
+      <div className="grid grid-cols-1 gap-8">
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 aurora-card p-8 lg:p-10">
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h2 className="text-lg font-bold tracking-tight">Aktivitas Pembayaran Terbaru</h2>
-              <p className="text-xs text-neutral/50">Histori mutasi uang masuk dari penghuni kos.</p>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Tren Pendapatan</h2>
+              <p className="text-xs font-medium text-slate-400">Statistik performa keuangan 6 bulan terakhir.</p>
             </div>
-            <button className="btn btn-sm btn-ghost text-primary text-xs normal-case">Lihat Semua ➔</button>
+            <div className="flex gap-2">
+               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider">
+                 <span className="h-2 w-2 rounded-full bg-indigo-500"></span> Omzet
+               </span>
+            </div>
+          </div>
+          {statsLoading ? (
+            <div className="h-[300px] w-full flex items-center justify-center">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+          ) : (
+            <RevenueChart data={statsData?.revenueTrend} />
+          )}
+        </div>
+      </div>
+
+      {/* Main Grid: Transactions & Quick Actions */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        
+        {/* TABLE DATA: Transaksi Terbaru */}
+        <div className="xl:col-span-2 bg-white rounded-[2.5rem] border border-slate-100 aurora-card p-8 lg:p-10">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Aktivitas Pembayaran</h2>
+              <p className="text-xs font-medium text-slate-400">Log transaksi masuk terbaru bulan ini.</p>
+            </div>
+            <button className="px-5 py-2.5 text-[11px] font-bold text-white bg-primary rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all duration-300 uppercase tracking-widest">Semua Histori</button>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="table table-sm w-full text-left">
+            <table className="table w-full">
               <thead>
-                <tr className="border-b border-base-300 text-neutral/60 text-xs">
-                  <th className="py-3 font-semibold">Nama Penghuni</th>
-                  <th className="py-3 font-semibold">No. Kamar</th>
-                  <th className="py-3 font-semibold">tipe Kamar</th>
-                  <th className="py-3 font-semibold">Tanggal Bayar</th>
-                  <th className="py-3 font-semibold">Status</th>
+                <tr className="border-b border-slate-100 text-indigo-400 uppercase text-[10px] tracking-[0.2em]">
+                  <th className="py-4 font-black bg-transparent">Penghuni</th>
+                  <th className="py-4 font-black bg-transparent">Unit</th>
+                  <th className="py-4 font-black bg-transparent">Tipe</th>
+                  <th className="py-4 font-black bg-transparent text-right">Tanggal</th>
+                  <th className="py-4 font-black bg-transparent text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {recentActivity?.map((tx) => (
-                  <tr key={tx.id} className="border-b border-base-200 hover:bg-base-200/50 transition-all">
-                    <td className="py-3.5 font-medium">{tx.name}</td>
-                    <td className="py-3.5 text-neutral/70">{tx.roomNumber}</td>
-                    <td className="py-3.5 text-neutral/70">{tx.type}</td>
-                    <td className="py-3.5 text-neutral/70">{tx.startDate}</td>
-                    <td className="py-3.5">
+                  <tr key={tx.id} className="border-b border-slate-50 hover:bg-indigo-50/30 transition-colors group">
+                    <td className="py-5">
+                      <div className="font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">{tx.name}</div>
+                    </td>
+                    <td className="py-5 text-slate-500 font-medium">#{tx.roomNumber}</td>
+                    <td className="py-5">
+                      <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider px-2 py-1 bg-indigo-50 rounded-md">{tx.type}</span>
+                    </td>
+                    <td className="py-5 text-slate-500 text-right font-medium">{tx.startDate}</td>
+                    <td className="py-5 text-right">
                       {tx?.status === "active" ? (
-                        <span className="badge badge-success badge-sm text-primary font-medium px-2.5 py-2">Lunas</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-600 text-[10px] font-bold uppercase tracking-wider">
+                          <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse"></span> Lunas
+                        </span>
                       ) : (
-                        <span className="badge badge-warning badge-sm text-white font-medium px-2.5 py-2">Menebus/Nunggak</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-rose-600 text-[10px] font-bold uppercase tracking-wider">
+                          <span className="h-1 w-1 rounded-full bg-rose-500"></span> Pending
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -115,21 +137,29 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-base-100 rounded-2xl border border-base-300 shadow-sm p-6">
-          <div className="mb-6">
-            <h2 className="text-lg font-bold tracking-tight">Aksi Cepat Operasional</h2>
-            <p className="text-xs text-neutral/50">Lakukan tindakan harian manajemen kos secara instan.</p>
+        {/* SIDE: Quick Actions */}
+        <div className="space-y-6">
+          <div className="px-2">
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Aksi Cepat</h2>
+            <p className="text-xs font-medium text-slate-400">Tindakan operasional instan.</p>
           </div>
 
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-            {quickActions.map((action) => (
-              <>
-                <QuickActionCards icon={action.icon} title={action.title} description={action.description} border={action.border} navigate={action.navigate} buttonText={action.buttonText} />
-              </>
+          <div className="grid grid-cols-1 gap-4">
+            {quickActions.map((action, idx) => (
+              <QuickActionCards 
+                key={idx}
+                icon={action.icon} 
+                title={action.title} 
+                description={action.description} 
+                navigate={action.navigate} 
+                buttonText={action.buttonText} 
+              />
             ))}
-            </div>
           </div>
-     </>
+        </div>
+
+      </div>
+    </div>
   );
 };
 

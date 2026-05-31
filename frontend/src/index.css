@@ -1,18 +1,59 @@
 @import "tailwindcss";
 
 @plugin "daisyui" {
-    themes: "kosTheme --default";
+    themes: "vibrantAurora --default";
 }
 
 @plugin "daisyui/theme" {
-    name: "kosTheme";
+    name: "vibrantAurora";
     default: true;
     color-scheme: light;
-    --color-primary: #3B82F6;
-    --color-secondary: #10B981;
-    --color-accent: #F59E0B;
-    --color-neutral: #1F2937;
+    /* Electric Indigo */
+    --color-primary: #6366F1;
+    --color-primary-content: #FFFFFF;
+    
+    /* Fresh Teal */
+    --color-secondary: #14B8A6;
+    --color-secondary-content: #FFFFFF;
+    
+    /* Soft Rose */
+    --color-accent: #F43F5E;
+    --color-accent-content: #FFFFFF;
+    
+    /* Slate for text */
+    --color-neutral: #334155;
+    --color-neutral-content: #F8FAFC;
+    
+    /* Backgrounds */
     --color-base-100: #FFFFFF;
-    --color-base-200: #F3F4F6;
-    --color-error: #F87171;
+    --color-base-200: #F8FAFC;
+    --color-base-300: #F1F5F9;
+    
+    --color-info: #0EA5E9;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-error: #EF4444;
+
+    --radius-selector: 1rem;
+    --radius-field: 0.75rem;
+    --radius-box: 1.5rem;
+}
+
+@layer base {
+  body {
+    @apply text-slate-700 bg-[#FBFBFE] antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-extrabold text-slate-900;
+  }
+}
+
+.aurora-card {
+  @apply bg-white border border-slate-100 shadow-xl shadow-indigo-100/50 hover:shadow-indigo-200/60 transition-all duration-300;
+}
+
+.btn-vibrant {
+  @apply bg-primary hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-200;
 }

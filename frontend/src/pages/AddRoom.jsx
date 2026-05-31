@@ -8,10 +8,10 @@ const AddRoom = () => {
 
   const [formData, setFormData] = useState({
     roomNumber: '',
-    type: 'Regular', // Default enum Mongoose
+    type: 'Regular', 
     size: '',
     pricePerMonth: '',
-    status: 'available', // Default enum Mongoose
+    status: 'available', 
     description: ''
   });
 
@@ -161,7 +161,7 @@ const AddRoom = () => {
             </div>
 
             {/* 5. STATUS KONDISI KAMAR (status - Enum) */}
-            <div className="form-control sm:col-span-2">
+            <div className="form-control sm:col-span-2 hidden">
               <label className="label py-1 px-1">
                 <span className="text-xs font-semibold tracking-wide text-neutral/80">Status Kamar Awal</span>
               </label>
