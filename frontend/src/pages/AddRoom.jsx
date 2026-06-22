@@ -1,248 +1,357 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCreateRoom } from '../hooks/useRoom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCreateRoom } from "../hooks/useRoom";
+import {
+  useFacilities,
+  useCreateFacilities,
+  useUpdateFacility,
+  useDeleteFacility,
+} from "../hooks/useFacility";
 
 const AddRoom = () => {
   const navigate = useNavigate();
+
   const { mutate: createRoom, isPending } = useCreateRoom();
+  const { data: facilities = [], isLoading: facilityLoading } = useFacilities();
+  
+  // State untuk Modal Kelola Fasilitas
+  const [showFacilityModal, setShowFacilityModal] = useState(false);
+  const [facilityName, setFacilityName] = useState("");
+  const [editingFacility, setEditingFacility] = useState(null);
+
+  // Hook Mutate Fasilitas
+  const { mutate: createFacility } = useCreateFacilities();
+  const { mutate: updateFacility } = useUpdateFacility();
+  const { mutate: deleteFacility } = useDeleteFacility();
 
   const [formData, setFormData] = useState({
-    roomNumber: '',
-    type: 'Regular', 
-    size: '',
-    pricePerMonth: '',
-    status: 'available', 
-    description: ''
+    roomNumber: "",
+    type: "Regular",
+    size: "",
+    pricePerMonth: "",
+    status: "available",
+    description: "",
   });
 
-  // State terpisah untuk menampung array of strings 'facilities'
   const [selectedFacilities, setSelectedFacilities] = useState([]);
 
-  // Daftar fasilitas standar kosan modern buat opsi checkbox
-  const availableFacilities = ['AC', 'Kamar Mandi Dalam', 'Kasur Kasur Kasur', 'Lemari Pakaian', 'WiFi', 'Meja Kerja', 'Water Heater'];
+  const inputFields = [
+    {
+      label: "Nomor Kamar",
+      name: "roomNumber",
+      type: "text",
+      placeholder: "Contoh: A101",
+    },
+    {
+      label: "Ukuran Kamar",
+      name: "size",
+      type: "text",
+      placeholder: "Contoh: 3x4 m",
+    },
+    {
+      label: "Harga Per Bulan",
+      name: "pricePerMonth",
+      type: "number",
+      placeholder: "Contoh: 1500000",
+    },
+  ];
 
   const handleOnChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
-  // Handler khusus checkbox fasilitas
-  const handleFacilityChange = (facility) => {
-    if (selectedFacilities.includes(facility)) {
-      setSelectedFacilities(selectedFacilities.filter(f => f !== facility));
+  const handleFacilityChange = (facilityId) => {
+    setSelectedFacilities((prev) =>
+      prev.includes(facilityId)
+        ? prev.filter((id) => id !== facilityId)
+        : [...prev, facilityId]
+    );
+  };
+
+  // Handler Submit Fasilitas Baru / Edit Fasilitas
+  const handleFacilitySubmit = (e) => {
+    e.preventDefault();
+    if (!facilityName.trim()) return;
+
+    if (editingFacility) {
+      // Mode Edit
+      updateFacility(
+        { id: editingFacility._id, name: facilityName },
+        {
+          onSuccess: () => {
+            setFacilityName("");
+            setEditingFacility(null);
+          },
+        }
+      );
     } else {
-      setSelectedFacilities([...selectedFacilities, facility]);
+      // Mode Tambah Baru
+      createFacility(
+        { name: facilityName },
+        {
+          onSuccess: () => {
+            setFacilityName("");
+          },
+        }
+      );
+    }
+  };
+
+  // Handler Hapus Fasilitas
+  const handleFacilityDelete = (id) => {
+    if (confirm("Apakah Anda yakin ingin menghapus fasilitas ini?")) {
+      deleteFacility(id, {
+        onSuccess: () => {
+          // Hapus dari list terpilih jika fasilitas yang dihapus sedang dicentang
+          setSelectedFacilities((prev) => prev.filter((item) => item !== id));
+        },
+      });
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Bungkus semua data termasuk array facilities menjadi satu payload sesuai skema Mongoose
     const payload = {
       ...formData,
-      pricePerMonth: Number(formData.pricePerMonth), // Pastikan formatnya Number sesuai schema
-      facilities: selectedFacilities
+      pricePerMonth: Number(formData.pricePerMonth),
+      facilities: selectedFacilities,
     };
 
     createRoom(payload, {
-      onSuccess: (data) => {
-        console.log("Kamar berhasil dibuat:", data);
-        alert("🎉 Kamar baru berhasil ditambahkan ke sistem!");
-        navigate('/dashboard');
+      onSuccess: () => {
+        alert("🎉 Kamar berhasil ditambahkan!");
+        navigate("/dashboard");
       },
       onError: (error) => {
-        console.error("Gagal menambahkan kamar:", error);
-        alert(error.response?.data?.message || "Gagal menyimpan data, periksa kembali inputan.");
-      }
+        alert(error.response?.data?.message || "Gagal menambahkan kamar");
+      },
     });
   };
 
   return (
-    <div className="min-h-screen bg-base-200 flex antialiased text-neutral selection:bg-primary/10">
-      
-      <main className="flex-1 p-6 md:p-12 max-w-3xl mx-auto">
-        
-        {/* Tombol Back */}
-        <button 
-          onClick={() => navigate('/dashboard')} 
-          className="btn btn-ghost btn-sm gap-2 normal-case mb-6 pl-0 hover:bg-transparent text-neutral/60 hover:text-primary transition-all"
+    <div className="min-h-screen bg-base-200 flex">
+      <main className="flex-1 p-6 md:p-12 max-w-4xl mx-auto">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="btn btn-ghost btn-sm mb-6"
         >
-          ⬅️ Kembali ke Dashboard
+          ⬅️ Kembali
         </button>
 
-        {/* Header Title */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-neutral">Tambah Unit Kamar Baru</h1>
-          <p className="text-xs text-neutral/50 mt-1">
-            Gunakan formulir ini untuk mendaftarkan aset kamar baru ke dalam database sistem operasional.
-          </p>
+          <h1 className="text-2xl font-bold">Tambah Unit Kamar</h1>
+          <p className="text-sm opacity-60">Tambahkan kamar baru ke sistem.</p>
         </div>
 
-        {/* FORM CONTAINER */}
-        <form onSubmit={handleSubmit} className="bg-base-100 rounded-2xl border border-base-300 shadow-sm p-6 md:p-8 flex flex-col gap-6">
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            
-            {/* 1. NOMOR KAMAR (roomNumber) */}
-            <div className="form-control">
-              <label className="label py-1 px-1">
-                <span className="text-xs font-semibold tracking-wide text-neutral/80">Nomor Kamar</span>
-              </label>
-              <input 
-                type="text" 
-                name="roomNumber"
-                placeholder="Contoh: A102, B205" 
-                className="input input-bordered w-full bg-base-100 border-base-300 focus:border-primary text-sm h-11 transition-all"
-                value={formData.roomNumber}
-                onChange={handleOnChange}
-                disabled={isPending}
-                required 
-              />
-            </div>
+        <form
+          onSubmit={handleSubmit}
+          className="bg-base-100 rounded-xl border p-6 space-y-6"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {inputFields.map((field) => (
+              <div key={field.name} className="form-control">
+                <label className="label">
+                  <span className="label-text">{field.label}</span>
+                </label>
 
-            {/* 2. TIPE KAMAR (type - Enum) */}
+                <input
+                  type={field.type}
+                  name={field.name}
+                  value={formData[field.name]}
+                  placeholder={field.placeholder}
+                  onChange={handleOnChange}
+                  disabled={isPending}
+                  className="input input-bordered w-full"
+                  required
+                />
+              </div>
+            ))}
+
+            {/* TYPE */}
             <div className="form-control">
-              <label className="label py-1 px-1">
-                <span className="text-xs font-semibold tracking-wide text-neutral/80">Tipe Kelas Kamar</span>
+              <label className="label">
+                <span className="label-text">Tipe Kamar</span>
               </label>
-              <select 
+
+              <select
                 name="type"
-                className="select select-bordered w-full bg-base-100 border-base-300 focus:border-primary text-sm h-11 min-h-[2.75rem] transition-all"
                 value={formData.type}
                 onChange={handleOnChange}
-                disabled={isPending}
-                required
+                className="select select-bordered"
               >
                 <option value="Regular">Regular</option>
                 <option value="VIP">VIP</option>
                 <option value="VVIP">VVIP</option>
               </select>
             </div>
-
-            {/* 3. UKURAN KAMAR (size) */}
-            <div className="form-control">
-              <label className="label py-1 px-1">
-                <span className="text-xs font-semibold tracking-wide text-neutral/80">Dimensi / Ukuran Kamar</span>
-              </label>
-              <input 
-                type="text" 
-                name="size"
-                placeholder="Contoh: 3x4 m, 4x5 m" 
-                className="input input-bordered w-full bg-base-100 border-base-300 focus:border-primary text-sm h-11 transition-all"
-                value={formData.size}
-                onChange={handleOnChange}
-                disabled={isPending}
-                required 
-              />
-            </div>
-
-            {/* 4. HARGA PER BULAN (pricePerMonth) */}
-            <div className="form-control">
-              <label className="label py-1 px-1">
-                <span className="text-xs font-semibold tracking-wide text-neutral/80">Tarif Sewa (Per Bulan)</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-3 text-sm text-neutral/40 font-medium">Rp</span>
-                <input 
-                  type="number" 
-                  name="pricePerMonth"
-                  placeholder="Contoh: 1500000" 
-                  className="input input-bordered w-full pl-11 bg-base-100 border-base-300 focus:border-primary text-sm h-11 transition-all"
-                  value={formData.pricePerMonth}
-                  onChange={handleOnChange}
-                  disabled={isPending}
-                  min="0"
-                  required 
-                />
-              </div>
-            </div>
-
-            {/* 5. STATUS KONDISI KAMAR (status - Enum) */}
-            <div className="form-control sm:col-span-2 hidden">
-              <label className="label py-1 px-1">
-                <span className="text-xs font-semibold tracking-wide text-neutral/80">Status Kamar Awal</span>
-              </label>
-              <select 
-                name="status"
-                className="select select-bordered w-full bg-base-100 border-base-300 focus:border-primary text-sm h-11 min-h-[2.75rem] transition-all"
-                value={formData.status}
-                onChange={handleOnChange}
-                disabled={isPending}
-                required
-              >
-                <option value="available">Tersedia (Kosong)</option>
-                <option value="occupied">Terisi (Ada Penghuni)</option>
-                <option value="maintenance">Dalam Perbaikan (Maintenance)</option>
-              </select>
-            </div>
-
-            {/* 6. FASILITAS (facilities - Array of Strings Checkbox) */}
-            <div className="form-control sm:col-span-2 mt-2">
-              <label className="label py-1 px-1 mb-1">
-                <span className="text-xs font-semibold tracking-wide text-neutral/80">Fasilitas Kamar Yang Tersedia</span>
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-base-200/50 p-4 rounded-xl border border-base-300">
-                {availableFacilities.map((facility, index) => (
-                  <label key={index} className="label cursor-pointer justify-start gap-3 p-1">
-                    <input 
-                      type="checkbox" 
-                      className="checkbox checkbox-primary checkbox-sm rounded-md" 
-                      checked={selectedFacilities.includes(facility)}
-                      onChange={() => handleFacilityChange(facility)}
-                      disabled={isPending}
-                    />
-                    <span className="text-xs font-medium text-neutral/70">{facility}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* 7. DESKRIPSI TAMBAHAN (description) */}
-            <div className="form-control sm:col-span-2">
-              <label className="label py-1 px-1">
-                <span className="text-xs font-semibold tracking-wide text-neutral/80">Deskripsi / Catatan Tambahan</span>
-              </label>
-              <textarea 
-                name="description"
-                placeholder="Tuliskan catatan khusus kamar jika ada (misal: AC merk Daikin, dekat tangga, token listrik mandiri)..." 
-                className="textarea textarea-bordered w-full bg-base-100 border-base-300 focus:border-primary text-sm h-24 resize-none transition-all"
-                value={formData.description}
-                onChange={handleOnChange}
-                disabled={isPending}
-              />
-            </div>
-
           </div>
 
-          {/* BUTTON ACTIONS */}
-          <div className="flex justify-end gap-3 border-t border-base-300 pt-6 mt-4">
-            <button 
-              type="button" 
-              onClick={() => navigate('/dashboard')}
-              disabled={isPending}
-              className="btn btn-ghost normal-case text-sm tracking-wide"
+          {/* FACILITY */}
+          <div className="form-control">
+            <div className="flex justify-between items-center mb-2">
+              <label className="label p-0">
+                <span className="label-text">Fasilitas Kamar</span>
+              </label>
+              {/* TOMBOL MODAL */}
+              <button
+                type="button"
+                onClick={() => setShowFacilityModal(true)}
+                className="btn btn-xs btn-outline btn-primary"
+              >
+                ⚙️ Kelola Fasilitas
+              </button>
+            </div>
+
+            <div className="border rounded-xl p-4 bg-base-200">
+              {facilityLoading ? (
+                <p className="text-sm opacity-60">Memuat fasilitas...</p>
+              ) : facilities.length === 0 ? (
+                <p className="text-sm opacity-50 text-center py-2">Belum ada fasilitas. Klik "Kelola Fasilitas" untuk menambahkan.</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {facilities.map((facility) => (
+                    <label
+                      key={facility._id}
+                      className="cursor-pointer flex items-center gap-2 bg-base-100 p-2 rounded-lg border hover:bg-base-300 transition-all"
+                    >
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-primary checkbox-sm"
+                        checked={selectedFacilities.includes(facility._id)}
+                        onChange={() => handleFacilityChange(facility._id)}
+                      />
+                      <span className="text-sm truncate">{facility.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* DESCRIPTION */}
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Deskripsi</span>
+            </label>
+
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleOnChange}
+              className="textarea textarea-bordered h-24"
+              placeholder="Catatan tambahan..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => navigate("/dashboard")}
             >
-              Batalkan
+              Batal
             </button>
-            <button 
-              type="submit" 
+
+            <button
+              type="submit"
               disabled={isPending}
-              className="btn btn-primary text-sm font-medium px-8 normal-case tracking-wide text-white rounded-xl shadow-sm"
+              className="btn btn-primary"
             >
               {isPending ? (
-                <span className="loading loading-spinner loading-sm"></span>
+                <span className="loading loading-spinner loading-sm" />
               ) : (
                 "Simpan Kamar"
               )}
             </button>
           </div>
-
         </form>
-
       </main>
+
+      {/* ================= MODAL KELOLA FASILITAS ================= */}
+      {showFacilityModal && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-md">
+            <h3 className="font-bold text-lg mb-4">⚙️ Kelola Master Fasilitas</h3>
+            
+            {/* Form Tambah/Edit */}
+            <form onSubmit={handleFacilitySubmit} className="flex gap-2 mb-4">
+              <input
+                type="text"
+                placeholder="Nama fasilitas baru..."
+                className="input input-bordered flex-1 input-sm"
+                value={facilityName}
+                onChange={(e) => setFacilityName(e.target.value)}
+                required
+              />
+              <button type="submit" className="btn btn-primary btn-sm">
+                {editingFacility ? "Simpan" : "Tambah"}
+              </button>
+              {editingFacility && (
+                <button 
+                  type="button" 
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    setEditingFacility(null);
+                    setFacilityName("");
+                  }}
+                >
+                  Batal
+                </button>
+              )}
+            </form>
+
+            {/* List Fasilitas yang Ada */}
+            <div className="max-h-60 overflow-y-auto space-y-2 border rounded-xl p-2 bg-base-200">
+              {facilities.length === 0 ? (
+                <p className="text-xs text-center opacity-50 py-4">Belum ada data fasilitas.</p>
+              ) : (
+                facilities.map((fac) => (
+                  <div key={fac._id} className="flex justify-between items-center bg-base-100 p-2 rounded-lg shadow-sm">
+                    <span className="text-sm font-medium">{fac.name}</span>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingFacility(fac);
+                          setFacilityName(fac.name);
+                        }}
+                        className="btn btn-ghost btn-xs text-info"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFacilityDelete(fac._id)}
+                        className="btn btn-ghost btn-xs text-error"
+                      >
+                        ❌
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="modal-action">
+              <button 
+                type="button" 
+                className="btn btn-sm"
+                onClick={() => {
+                  setShowFacilityModal(false);
+                  setEditingFacility(null);
+                  setFacilityName("");
+                }}
+              >
+                Selesai & Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

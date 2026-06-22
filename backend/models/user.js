@@ -16,15 +16,6 @@ const userSchema = new mongoose.Schema({
   password: { 
     type: String, 
     required: [true, 'Password wajib diisi'] 
-  },
-  role: { 
-    type: String, 
-    enum: ['owner', 'staff', 'tenant'], // PERUBAHAN: Ditambahkan 'owner' agar diizinkan oleh database 
-  },
-   roomId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Room', 
-    default: null 
   }
 }, {
   timestamps: true 

@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const Tenant = require('../models/Tenant');
-const Room = require('../models/Room');
-const Transaction = require('../models/Transaction');
+const Tenant = require('../models/tenant');
+const Room = require('../models/room');
+const Transaction = require('../models/transaction');
 const mongoose = require('mongoose');
 
 // IMPORT MITRA KEAMANAN: Hubungkan middleware pengecekan token dan role
@@ -199,5 +199,49 @@ router.put('/checkout/:id',  async (req, res) => {
     res.status(500).json({ message: 'Terjadi kesalahan server', error: error.message });
   }
 });
+
+router.put('/:id', async (req,res) => {
+  try {
+    const { name, 
+        nik, 
+        phone, 
+        emergencyContact, 
+        room, 
+      } = req.body
+    const tenant = await Tenant.findByIdAndUpdate(
+      req.params.id,
+      {
+        name,
+        nik,
+        phone,
+        emergencyContact,
+        room,
+      }
+    )
+
+    res.status(200).json({
+      message:'data tenant berhasil di update',
+      data:tenant
+    })
+  } catch (error) {
+    res.status(500).json({
+      message:error.message
+    })
+  }
+})
+
+router.delete('/:id', async(req,res) => {
+  try {
+    const tenant = await Tenant.findByIdAndDelete(req.params.id)
+    res.status(200).json({
+      message:"data tenant berhasil di hapus",
+      data:tenant
+    })
+  } catch (error) {
+    res.status(500).json({
+      message:error.message
+    })
+  }
+})
 
 module.exports = router;

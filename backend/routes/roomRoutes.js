@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Room = require('../models/Room'); 
-const Tenant = require('../models/Tenant');
+const Room = require('../models/room'); 
+const Tenant = require('../models/tenant');
 
 const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 
@@ -69,11 +69,76 @@ router.get('/', async (req, res) => {
 
 router.get("/available", async (req, res) => {
   try {
-    const rooms = await Room.find({ status: "available" });
+    // Tambahkan .populate('tenant') agar virtual field-nya ikut ke-render sebagai null/array kosong (aman buat FE)
+    const rooms = await Room.find({ status: "available" }).populate('tenant');
     res.status(200).json(rooms);
   } catch (error) {
     res.status(500).json({ message: "Terjadi kesalahan server", error: error.message });
   }
 });
+
+
+router.get('/:id' , async (req,res) => {
+  try {
+    const room = await Room.findById(req.params.id).populate('tenant')
+    res.status(200).json(room)
+  } catch (error) {
+    res.status(500).json({ message: "Terjadi kesalahan server", error: error.message });
+  }
+})
+
+
+router.put("/:id" , async(req,res)=>{
+  try {
+    const { roomNumber, type, pricePerMonth, size ,facilities, description } = req.body;
+
+    const room = await Room.findByIdAndUpdate(
+      req.params.id,
+      {
+        roomNumber,
+        type,
+        pricePerMonth,
+        size,
+        facilities,
+        description
+      },
+      {
+        new:true,
+        runValidators:true
+      }
+    )
+
+    if(!room){
+      return res.status(404).json({
+        message:'kamar tidak ditemukan'
+      })
+    }
+
+    res.status(200).json({
+      message:'kamar berhasil di update',
+      data:room
+    })
+
+  } catch (error) {
+    res.status(500).json({
+      message:error.message
+    })
+  }
+})
+
+router.delete("/:id" , async(req,res) => {
+  try {
+    const room = await Room.findOneAndDelete(req.params.id)
+    res.status(200).json({
+      message : "kamar berhasil di hapus",
+      data : room
+    })
+  } catch (error) {
+    res.status(500).json({
+      message:error.message
+    })
+  }
+})
+
 
 module.exports = router;

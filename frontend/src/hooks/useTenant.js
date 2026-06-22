@@ -55,3 +55,37 @@ export const useRecordPayment = () => {
     }
   });
 };
+
+export const useUpdateTenant = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    // Terima satu objek destructuring { id, updatedData }
+    mutationFn: async ({ id, updatedData }) => {
+      const response = await api.put(`/tenants/${id}`, updatedData, { withCredentials: true });
+      return response.data;
+    },
+    // Modif onSuccess agar fleksibel melakukan reset query apa aja
+    onSuccess: (data, variables) => {
+      // 1. Refresh list daftar semua tenant
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      // 2. Refresh detail tenant spesifik ini berdasarkan ID-nya biar sinkron!
+      queryClient.invalidateQueries({ queryKey: ['tenantDetail', variables.id] });
+    }
+  });
+};
+export const useDeleteTenant = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      const response = await api.delete(`/tenants/${id}` , {withCredentials:true})
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey:['tenants']
+      })
+    }
+  })
+}
