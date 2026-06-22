@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Transaction = require('../models/Transaction');
-const Tenant = require('../models/Tenant');
+const Transaction = require('../models/transaction');
+const Tenant = require('../models/tenant');
 
 // IMPORT MITRA KEAMANAN: Hubungkan dengan middleware pengecekan token dan role
 const { protect, authorizeRoles } = require('../middleware/authMiddleware');

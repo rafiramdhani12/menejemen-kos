@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGetTenants } from '../hooks/useTenant'; // Asumsi custom hook buat fetch semua tenant
+import { useGetTenants } from '../hooks/useTenant'; 
+import {Link} from 'react-router-dom'
 
 const TenantList = () => {
   const navigate = useNavigate();
@@ -141,9 +142,9 @@ const TenantList = () => {
                         ) : (
                           <span className="text-xs text-neutral/30 italic">-</span>
                         )}
-                        <button onClick={() => navigate(`tenant/${tenant._id}`)} className="btn btn-ghost btn-xs text-emerald-600 hover:bg-emerald-50 normal-case font-bold px-3 py-1 rounded-md">
+                        <Link to={`/dashboard/tenant/${tenant._id}`} className="btn btn-ghost btn-xs text-emerald-600 hover:bg-emerald-50 normal-case font-bold px-3 py-1 rounded-md">
                             detail
-                        </button>
+                        </Link>
                       </td>
 
                     </tr>

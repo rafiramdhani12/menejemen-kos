@@ -1,8 +1,8 @@
 const express = require('express')
 const router = express.Router()
-const Room = require('../models/Room')
-const Transaction = require('../models/Transaction')
-const Tenant = require('../models/Tenant')
+const Room = require('../models/room')
+const Transaction = require('../models/transaction')
+const Tenant = require('../models/tenant')
 
 router.get("/available" , async (req, res) => {
     try{

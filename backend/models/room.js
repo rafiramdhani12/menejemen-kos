@@ -22,10 +22,10 @@ const roomSchema = new mongoose.Schema({
     required: [true, 'Harga per bulan wajib diisi'],
     min: [0, 'Harga per bulan tidak boleh negatif']
   },
-  facilities: {
-    type: [String],
-    default: [] 
-  },
+  facilities: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref:'Facility'
+  }],
   status: { 
     type: String, 
     enum: ['available', 'occupied', 'maintenance'], 
