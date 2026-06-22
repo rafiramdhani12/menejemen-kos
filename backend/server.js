@@ -31,7 +31,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Rute Aplikasi
 app.use('/api/rooms', roomRoutes);
 app.use('/api/tenants', tenantRoutes); 
-app.use('/api/facilities',facilityRoutes)
+app.use('/api/facilities',facilityRoutes) // add this shit
 app.use('/api/transactions', transactionRoutes); 
 app.use('/api/auth', authRoutes); 
 app.use('/api/dashboard', dashboardRoutes);
