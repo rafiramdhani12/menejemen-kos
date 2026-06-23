@@ -230,18 +230,36 @@ router.put('/:id', async (req,res) => {
   }
 })
 
-router.delete('/:id', async(req,res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const tenant = await Tenant.findByIdAndDelete(req.params.id)
+    const tenantId = req.params.id;
+
+    // 1. Cari dulu data tenant sebelum dihapus untuk tahu dia di kamar mana
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) {
+      return res.status(404).json({ message: "Data tenant tidak ditemukan" });
+    }
+
+    // 2. Jika tenant tersebut menempati kamar, kosongkan kamarnya!
+    if (tenant.room) {
+      await Room.findByIdAndUpdate(tenant.room, { status: 'available' });
+    }
+
+    // 3. Hapus semua transaksi milik tenant ini
+    await Transaction.deleteMany({ tenant: tenantId });
+
+    // 4. Terakhir, baru hapus data tenant dari database
+    await Tenant.findByIdAndDelete(tenantId);
+
     res.status(200).json({
-      message:"data tenant berhasil di hapus",
-      data:tenant
-    })
+      message: "🎉 Sukses! Data tenant didelete, kamar dikosongkan, dan riwayat transaksi dibersihkan."
+    });
+
   } catch (error) {
     res.status(500).json({
-      message:error.message
-    })
+      message: error.message
+    });
   }
-})
+});
 
 module.exports = router;

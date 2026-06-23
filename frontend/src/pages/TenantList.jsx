@@ -1,11 +1,14 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useGetTenants } from '../hooks/useTenant'; 
-import {Link} from 'react-router-dom'
+import { useDeleteTenant } from '../hooks/useTenant'; // 👈 IMPORT HOOK DELETE LO DI SINI
 
 const TenantList = () => {
   const navigate = useNavigate();
   const { data: tenants, isLoading, isError } = useGetTenants();
+  
+  // Panggil hook delete yang udah lo bikin
+  const { mutate: deleteTenant, isPending: isDeleting } = useDeleteTenant();
 
   // Fungsi helper buat ngerapihin format tanggal di table
   const formatTanggal = (dateString) => {
@@ -15,6 +18,22 @@ const TenantList = () => {
       month: 'short',
       year: 'numeric',
     });
+  };
+
+  // Handler untuk eksekusi hapus data
+  const handleDelete = (id, name) => {
+    const confirmDelete = window.confirm(`⚠️ Apakah lo yakin mau menghapus data penghuni "${name.toUpperCase()}"? Tindakan ini tidak bisa dibatalkan.`);
+    
+    if (confirmDelete) {
+      deleteTenant(id, {
+        onSuccess: () => {
+          alert("🗑️ Data penghuni berhasil dihapus permanent!");
+        },
+        onError: (err) => {
+          alert(err.response?.data?.message || "Gagal menghapus data penghuni.");
+        }
+      });
+    }
   };
 
   if (isLoading) {
@@ -50,7 +69,7 @@ const TenantList = () => {
             </p>
           </div>
           <button
-            onClick={() => navigate('/check-in')}
+            onClick={() => navigate('/dashboard/tenant/registration')}
             className="btn btn-primary btn-sm text-xs font-semibold px-4 normal-case text-white rounded-xl shadow-sm"
           >
             ➕ Check-In Penghuni Baru
@@ -130,27 +149,42 @@ const TenantList = () => {
                         )}
                       </td>
 
-                      {/* Tombol Navigasi Bayar */}
+                      {/* KOLOM AKSI (Bayar, Detail, Hapus) */}
                       <td className="pr-6 text-center">
-                        {tenant.status === 'active' ? (
-                          <button
-                            onClick={() => navigate(`/pay-rent/${tenant._id}`)}
-                            className="btn btn-ghost btn-xs text-emerald-600 hover:bg-emerald-50 normal-case font-bold px-3 py-1 rounded-md"
+                        <div className="flex items-center justify-center gap-1">
+                          {tenant.status === 'active' ? (
+                            <button
+                              onClick={() => navigate(`/pay-rent/${tenant._id}`)}
+                              className="btn btn-ghost btn-xs text-emerald-600 hover:bg-emerald-50 normal-case font-bold px-2 py-1 rounded-md"
+                            >
+                              💵 Bayar
+                            </button>
+                          ) : (
+                            <span className="text-xs text-neutral/30 italic px-2">-</span>
+                          )}
+
+                          <Link 
+                            to={`/dashboard/tenant/${tenant._id}`} 
+                            className="btn btn-ghost btn-xs text-indigo-600 hover:bg-indigo-50 normal-case font-bold px-2 py-1 rounded-md"
                           >
-                            💵 Bayar Sewa
+                            Detail
+                          </Link>
+
+                          {/* TOMBOL HAPUS DATA */}
+                          <button
+                            onClick={() => handleDelete(tenant._id, tenant.name)}
+                            disabled={isDeleting}
+                            className="btn btn-ghost btn-xs text-rose-600 hover:bg-rose-50 normal-case font-bold px-2 py-1 rounded-md"
+                            title="Hapus Penghuni"
+                          >
+                            🗑️
                           </button>
-                        ) : (
-                          <span className="text-xs text-neutral/30 italic">-</span>
-                        )}
-                        <Link to={`/dashboard/tenant/${tenant._id}`} className="btn btn-ghost btn-xs text-emerald-600 hover:bg-emerald-50 normal-case font-bold px-3 py-1 rounded-md">
-                            detail
-                        </Link>
+                        </div>
                       </td>
 
                     </tr>
                   ))
                 ) : (
-                  // State kalau data di MongoDB lu masih kosong melompong
                   <tr>
                     <td colSpan="7" className="text-center py-12 text-neutral/40 italic">
                       Belum ada data penghuni kos yang terdaftar.

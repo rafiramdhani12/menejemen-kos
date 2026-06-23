@@ -12,3 +12,18 @@ export const useGetTransactions = () => {
         }
     });
 };
+
+export const usePayRent = () => {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (payload) => {
+            const {data} = await api.post('/transactions/pay-rent' , payload ,{withCredentials:true})
+            return data
+        },
+        onSuccess: (data,variables) => {
+            queryClient.invalidateQueries({queryKey:['transactions']})
+            queryClient.invalidateQueries({ queryKey: ['tenantDetail', variables.tenantId] });
+        }
+    })
+}

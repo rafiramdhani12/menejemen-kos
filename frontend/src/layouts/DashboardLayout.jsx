@@ -32,6 +32,7 @@ const DashboardLayout = () => {
     { id: 2, title: "Manajemen Kamar", link: "/dashboard/rooms" },
     { id: 3, title: "Data Penghuni", link: "/dashboard/tenants" },
     { id: 4, title: "Transaksi", link: "/dashboard/transactions" },
+    { id: 5, title: "Pegawai", link: "/dashboard/worker" },
   ]
 
   return (
