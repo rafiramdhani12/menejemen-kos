@@ -23,7 +23,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Koneksi ke MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Berhasil terhubung ke database '))
   .catch((err) => console.error('Gagal terhubung ke MongoDB:', err));
