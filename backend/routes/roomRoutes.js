@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Room = require('../models/room'); 
 const Tenant = require('../models/tenant');
+const Transaction = require("../models/transaction")
 
 const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 
@@ -126,19 +127,42 @@ router.put("/:id" , async(req,res)=>{
   }
 })
 
-router.delete("/:id" , async(req,res) => {
+router.delete("/:id", async (req, res) => {
   try {
-    const room = await Room.findOneAndDelete(req.params.id)
+    const roomId = req.params.id;
+
+    // 1. Cari tahu apakah ada tenant yang sedang menempati kamar ini
+    // Kita cari tenant yang properti 'room'-nya sama dengan roomId ini
+    const tenant = await Tenant.findOne({ room: roomId });
+
+    if (tenant) {
+      // 2. Jika ada tenant di kamar tersebut, hapus semua transaksi milik tenant ini
+      await Transaction.deleteMany({ tenant: tenant._id });
+
+      // 3. Hapus data tenant tersebut
+      await Tenant.findByIdAndDelete(tenant._id);
+    }
+
+    // 4. Terakhir, baru hapus data kamarnya dari database
+    const room = await Room.findByIdAndDelete(roomId);
+
+    if (!room) {
+      return res.status(404).json({ message: "Kamar tidak ditemukan" });
+    }
+
     res.status(200).json({
-      message : "kamar berhasil di hapus",
-      data : room
-    })
+      message: tenant 
+        ? "🎉 Sukses! Kamar berhasil dihapus, beserta data penghuni & seluruh riwayat transaksinya." 
+        : "🎉 Sukses! Kamar kosong berhasil dihapus.",
+      data: room
+    });
+
   } catch (error) {
     res.status(500).json({
-      message:error.message
-    })
+      message: error.message
+    });
   }
-})
+});
 
 
 module.exports = router;

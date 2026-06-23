@@ -11,6 +11,7 @@ import TransactionList from './pages/TransactionList'
 import RoomList from './pages/RoomList'
 import TenantDetail from './pages/TenantDetail'
 import RoomDetail from './pages/RoomDetail'
+import Worker from './pages/Worker'
 
 const App = () => {
   return (
@@ -26,6 +27,7 @@ const App = () => {
         <Route path="rooms" element={<RoomList />} />
         <Route path="tenant/:id" element={<TenantDetail />} />
         <Route path="room/:id" element={<RoomDetail />} />
+        <Route path="worker" element={<Worker />} />
       </Route>
     </Routes>
   )

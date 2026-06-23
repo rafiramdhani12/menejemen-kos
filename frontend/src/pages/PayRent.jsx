@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGetTenantById, useRecordPayment } from '../hooks/useTenant'; 
 
 const PayRent = () => {
-  const { id } = useParams(); // ✅ Mengambil ID Tenant dari URL dinamis Vite
+  const { id } = useParams(); 
   const navigate = useNavigate();
 
   // Memanggil hook untuk ambil data detail tenant & hook mutasi untuk bayar

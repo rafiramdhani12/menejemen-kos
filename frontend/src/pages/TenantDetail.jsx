@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGetTenantDetail } from '../hooks/useTenantDetail';
-import { useUpdateTenant } from '../hooks/useTenant'; // 👈 IMPORT HOOK BARU LO DI SINI
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/axios';
+import { useUpdateTenant } from '../hooks/useTenant'; 
+import { usePayRent } from '../hooks/useTransaction'; // 👈 ✅ INTEGRASI: Import Custom Hook baru lo di sini
+import { useQueryClient } from '@tanstack/react-query';
 
 const TenantDetail = () => {
   const { id } = useParams();
@@ -11,8 +11,11 @@ const TenantDetail = () => {
   const queryClient = useQueryClient();
   const { data: tenant, isPending, isError } = useGetTenantDetail(id);
 
-  // Panggil Custom Hook Update Tenant bikinan lo
+  // Panggil Custom Hook Update Tenant
   const { mutate: updateTenant, isPending: isUpdatingTenant } = useUpdateTenant();
+  
+  // 👈 ✅ INTEGRASI: Gunakan Custom Hook Pembayaran Baru
+  const { mutate: payRent, isPending: isPayingRent } = usePayRent();
 
   // State Kontrol Modal Bayar Sewa
   const [showPayModal, setShowPayModal] = useState(false);
@@ -39,23 +42,6 @@ const TenantDetail = () => {
       });
     }
   }, [tenant]);
-
-  // TanStack Mutation untuk Bayar Sewa
-  const payRentMutation = useMutation({
-    mutationFn: async (payload) => {
-      const response = await api.post('/transactions/pay-rent', payload, { withCredentials: true });
-      return response.data;
-    },
-    onSuccess: () => {
-      alert("🎉 Pembayaran sewa berhasil dicatat & masa sewa diperpanjang!");
-      setShowPayModal(false);
-      setPayDuration(1);
-      queryClient.invalidateQueries({ queryKey: ['tenantDetail', id] });
-    },
-    onError: (error) => {
-      alert(error.response?.data?.message || "Gagal memproses pembayaran");
-    }
-  });
 
   const indonesianRupiah = (value) => 
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(value);
@@ -90,17 +76,30 @@ const TenantDetail = () => {
   const rentPricePerMonth = tenant.roomDetail?.pricePerMonth || 0;
   const totalAmountToPay = rentPricePerMonth * payDuration;
 
+  // 👈 ✅ INTEGRASI: Gunakan handler yang memicu custom hook `payRent`
   const handleConfirmPayment = (e) => {
     e.preventDefault();
-    payRentMutation.mutate({
-      tenantId: id,
-      durationMonths: payDuration,
-      amountPaid: totalAmountToPay,
-      paymentMethod: paymentMethod
-    });
+    payRent(
+      {
+        tenantId: id,
+        durationMonths: payDuration,
+        amountPaid: totalAmountToPay,
+        paymentMethod: paymentMethod
+      },
+      {
+        onSuccess: () => {
+          alert("🎉 Pembayaran sewa berhasil dicatat & masa sewa diperpanjang!");
+          setShowPayModal(false);
+          setPayDuration(1);
+        },
+        onError: (error) => {
+          alert(error.response?.data?.message || "Gagal memproses pembayaran");
+        }
+      }
+    );
   };
 
-  // 👈 FIX: Handler Menggunakan Custom Hook Update Baru Lo
+  // Handler Menggunakan Custom Hook Update Baru
   const handleEditSubmit = (e) => {
     e.preventDefault();
     updateTenant(
@@ -347,7 +346,7 @@ const TenantDetail = () => {
               <div className="form-control">
                 <label className="label text-[10px] font-black text-slate-400 uppercase tracking-widest">Durasi Pembayaran</label>
                 <select 
-                  className="select select-bordered w-full rounded-xl font-semibold" 
+                  className="select select-bordered w-full rounded-xl font-semibold text-sm" 
                   value={payDuration} 
                   onChange={(e) => setPayDuration(Number(e.target.value))}
                 >
@@ -362,13 +361,12 @@ const TenantDetail = () => {
               <div className="form-control">
                 <label className="label text-[10px] font-black text-slate-400 uppercase tracking-widest">Metode Pembayaran</label>
                 <select 
-                  className="select select-bordered w-full rounded-xl font-semibold" 
+                  className="select select-bordered w-full rounded-xl font-semibold text-sm" 
                   value={paymentMethod} 
                   onChange={(e) => setPaymentMethod(e.target.value)}
                 >
-                  <option value="Cash">Cash / Tunai</option>
-                  <option value="Transfer Bank">Transfer Bank</option>
-                  <option value="E-Wallet">E-Wallet (OVO/Gopay/Dana)</option>
+                  <option value="Cash">💵 Tunai / Cash</option>
+                  <option value="Transfer">🏦 Transfer Bank</option>
                 </select>
               </div>
 
@@ -398,10 +396,10 @@ const TenantDetail = () => {
                 </button>
                 <button 
                   type="submit" 
-                  disabled={payRentMutation.isPending} 
+                  disabled={isPayingRent} 
                   className="btn btn-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-5 normal-case"
                 >
-                  {payRentMutation.isPending ? <span className="loading loading-spinner loading-xs"></span> : "Konfirmasi & Perpanjang"}
+                  {isPayingRent ? <span className="loading loading-spinner loading-xs"></span> : "Konfirmasi & Perpanjang"}
                 </button>
               </div>
             </form>

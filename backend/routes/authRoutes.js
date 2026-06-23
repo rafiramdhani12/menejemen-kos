@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
     }
 
     // VALIDASI 2: Batasi nilai role yang diperbolehkan di sistem kos
-    const validRoles = ['owner', 'staff', 'tenant'];
+    const validRoles = ['owner', 'admin'];
     if (!validRoles.includes(role.toLowerCase())) {
       return res.status(400).json({ message: 'Role tidak valid! Pilih antara: owner, staff, atau tenant.' });
     }
@@ -101,6 +101,47 @@ router.post('/logout' , async (req,res) => {
     res.status(200).json({ message: '👋 Logout berhasil!' });
   } catch (error) {
     res.status(500).json({ message: 'Terjadi kesalahan server', error: error.message });
+  }
+})
+
+router.get('/' , async(req,res) => {
+  try {
+    const user = await User.find();
+    res.status(200).json(user)
+  } catch (error) {
+    res.status(500).json({message:'terjadi kesalahan server' , error:error.message})
+  }
+})
+
+router.put("/:id" , async(req,res) => {
+  try {
+    const {name , email , role , password} = req.body
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+      name,
+      email,
+      role,
+      password
+    })
+
+    res.status(200).json({
+      message:'data tenant berhasil di update',
+      data:user
+    })
+
+  } catch (error) {
+    res.status(500).json({message : error.message})
+  }
+})
+
+router.delete("/:id" , async(req,res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id)
+    res.status(200).json(user)
+  } catch (error) {
+    res.status(500).json({message:error.message})
   }
 })
 
